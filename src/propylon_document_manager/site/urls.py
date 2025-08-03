@@ -1,18 +1,44 @@
 from django.conf import settings
-from django.conf.urls.static import static
-from django.contrib import admin
 from django.urls import include, path
-from django.views import defaults as default_views
-from django.views.generic import TemplateView
-from rest_framework.authtoken.views import obtain_auth_token
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
+from rest_framework import permissions
+
+from propylon_document_manager.file_versions.api.views import (
+    CustomLoginView,
+    GetFileVersionByCAS,
+    GetFileVersionByURL,
+    LogoutView,
+    UserRegistrationView,
+)
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="Documents manager API",
+        default_version="v1",
+        license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+    permission_classes=[permissions.AllowAny],
+    authentication_classes=[],
+)
 
 # API URLS
 urlpatterns = [
+    # API docs
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     # API base url
     path("api/", include("propylon_document_manager.site.api_router")),
-    # DRF auth token
-    path("api-auth/", include("rest_framework.urls")),
-    path("auth-token/", obtain_auth_token),
+    # API url
+    path("<slug:url>", GetFileVersionByURL.as_view(), name="get_document_by_url"),
+    path("<str:cas_url>", GetFileVersionByCAS.as_view(), name="get_document_by_cas_url"),
+    # API auth
+    path("auth/register/", UserRegistrationView.as_view(), name="user_register"),
+    path("auth/login/", CustomLoginView.as_view(), name="custom-login"),
+    path("auth/logout/", LogoutView.as_view(), name="logout"),
 ]
 
 if settings.DEBUG:
