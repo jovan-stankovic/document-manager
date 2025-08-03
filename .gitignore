@@ -278,3 +278,6 @@ propylon_document_manager/media/
 
 ### DB
 *.sqlite*
+
+.idea/*
+src/propylon_document_manager/media
