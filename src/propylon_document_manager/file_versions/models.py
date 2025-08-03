@@ -1,8 +1,14 @@
-from django.db import models
+import os
+from hashlib import md5
+
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 from django.db.models import CharField, EmailField
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+
+from propylon_document_manager.utils.validators import validate_file_extension
+
 
 class User(AbstractUser):
     """
@@ -32,5 +38,29 @@ class User(AbstractUser):
 
 
 class FileVersion(models.Model):
-    file_name = models.fields.CharField(max_length=512)
-    version_number = models.fields.IntegerField()
+    file_name = models.CharField(max_length=512, null=True, blank=True, default=None)
+    version_number = models.fields.PositiveSmallIntegerField(default=0)
+    file = models.FileField(
+        upload_to="files/", null=True, blank=True, default=None, validators=[validate_file_extension]
+    )
+    file_extension = models.CharField(max_length=10, null=True, blank=True)
+    url = models.CharField(max_length=512, null=True, blank=True, default=None)
+    cas_url = models.CharField(max_length=128, unique=True, null=True, blank=True)  # CAS unique identifier
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, default=None)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if self.file:
+            _, extension = os.path.splitext(self.file.name)
+            self.file_extension = extension.lstrip(".").lower()
+            self.cas_url = md5(self.file.read()).hexdigest()  # Generate CAS URL
+
+            # Get the latest version number for the same URL
+            latest_version = FileVersion.objects.filter(url=self.url).order_by("-version_number").first()
+            if latest_version:
+                self.version_number = latest_version.version_number + 1
+            else:
+                self.version_number = 1
+        super().save(*args, **kwargs)
