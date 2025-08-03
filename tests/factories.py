@@ -2,8 +2,14 @@ from collections.abc import Sequence
 from typing import Any
 
 from django.contrib.auth import get_user_model
-from factory import Faker, post_generation
+from django.core.files.base import ContentFile
+from factory import Faker, post_generation, SubFactory
 from factory.django import DjangoModelFactory
+from faker import Faker as FakerLib
+
+from propylon_document_manager.file_versions.models import FileVersion
+
+fake = FakerLib()
 
 
 class UserFactory(DjangoModelFactory):
@@ -29,3 +35,30 @@ class UserFactory(DjangoModelFactory):
     class Meta:
         model = get_user_model()
         django_get_or_create = ["email"]
+
+
+class FileVersionFactory(DjangoModelFactory):
+    file_name = Faker("file_name")
+    version_number = Faker("random_int", min=0, max=10)
+    file_extension = "txt"
+    url = "test-file-url"
+    cas_url = Faker("md5")  # Mimic CAS generation logic with Faker
+
+    user = SubFactory(UserFactory)
+
+    @post_generation
+    def file(self, create: bool, extracted: Sequence[Any], **kwargs):
+        """Add file content after creation."""
+        if not create:
+            return
+
+        # Create a dummy file with content
+        if extracted:
+            self.file.save(extracted.file_name, extracted)
+        else:
+            file_content = fake.text(max_nb_chars=1024)
+            content = ContentFile(file_content.encode("utf-8"))
+            self.file.save(f"{self.file_name}.{self.file_extension}", content)
+
+    class Meta:
+        model = FileVersion

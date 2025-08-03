@@ -1,11 +1,13 @@
 import pytest
 
-from propylon_document_manager.file_versions.models import User
-from .factories import UserFactory
+from propylon_document_manager.file_versions.models import FileVersion, User
+from .factories import FileVersionFactory, UserFactory
+
 
 @pytest.fixture(autouse=True)
 def enable_db_access_for_all_tests(db):
     pass
+
 
 @pytest.fixture(autouse=True)
 def media_storage(settings, tmpdir):
@@ -15,3 +17,9 @@ def media_storage(settings, tmpdir):
 @pytest.fixture
 def user(db) -> User:
     return UserFactory()
+
+
+@pytest.fixture
+def file_version(db) -> FileVersion:
+    """Fixture to create a FileVersion instance."""
+    return FileVersionFactory()
