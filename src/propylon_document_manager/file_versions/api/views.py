@@ -41,13 +41,68 @@ class FileVersionViewSet(viewsets.ModelViewSet):
             }
         },
         responses={201: FileVersionSerializer, 400: "Bad Request"},
-        description="Create a new file version",
+        description=(
+            "Create a new file version. Authenticated users can upload a file and provide "
+            "an optional filename and URL. Returns 400 if the file was already uploaded."
+        ),
     )
     def create(self, request, *args, **kwargs):
         try:
             return super().create(request, *args, **kwargs)
         except IntegrityError:
             return Response("You have already uploaded this file.", status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={200: FileVersionSerializer(many=True)},
+        description=(
+            "Retrieve a list of all file versions belonging to the authenticated user. "
+            "Each version's details are returned."
+        ),
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        responses={200: FileVersionSerializer},
+        description=(
+            "Retrieve details of a specific file version identified by 'id'. This method "
+            "ensures that the user owns the requested version."
+        ),
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        request=FileVersionSerializer,
+        responses={200: FileVersionSerializer},
+        description=(
+            "Update the details of an existing file version specified by 'id'. The user must "
+            "be the owner to modify the file."
+        ),
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(
+        request=FileVersionSerializer,
+        responses={200: FileVersionSerializer},
+        description=(
+            "Modify parts of an existing file version specified by 'id'. Partial updates "
+            "are allowed to fields like file name or URL."
+        ),
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
+        responses={204: None},
+        description=(
+            "Delete a file version identified by 'id'. The authenticated user must own the "
+            "file version they wish to delete."
+        ),
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 
 class GetFileVersionByURL(APIView):
@@ -63,7 +118,10 @@ class GetFileVersionByURL(APIView):
             ),
         ],
         responses={200: FileResponse},
-        description="Retrieve a file version using its URL",
+        description=(
+            "Retrieve a specific file version by its URL. Optionally supply a revision number "
+            "to get that version; otherwise, the latest version is returned. Requires ownership of the file."
+        ),
     )
     def get(self, request, url):
         queryset = FileVersion.objects.filter(url=url, user=request.user)
@@ -91,7 +149,10 @@ class GetFileVersionByCAS(APIView):
 
     @extend_schema(
         responses={200: FileResponse},
-        description="Retrieve a file using its CAS URL",
+        description=(
+            "Retrieve a file version by its CAS (Content-Addressable Storage) URL. The file "
+            "must belong to the authenticated user."
+        ),
     )
     def get(self, request, cas_url):
         file_version = get_object_or_404(FileVersion, cas_url=cas_url, user=request.user)
@@ -114,7 +175,10 @@ class UserRegistrationView(APIView):
     @extend_schema(
         request=UserSerializer,
         responses={201: UserSerializer},
-        description="Register a new user",
+        description=(
+            "Register a new user by providing required details. Returns the newly "
+            "registered user's information upon success."
+        ),
     )
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -130,7 +194,10 @@ class CustomLoginView(APIView):
     @extend_schema(
         request=LoginSerializer,
         responses={200: TokenSerializer},
-        description="User login view to authenticate and obtain token",
+        description=(
+            "Authenticate a user using their username and password to obtain an "
+            "authentication token for future requests."
+        ),
     )
     def post(self, request, *args, **kwargs):
         return obtain_auth_token(request._request)
@@ -141,7 +208,9 @@ class LogoutView(APIView):
 
     @extend_schema(
         responses={204: None},
-        description="Log out the current user by invalidating their authentication token",
+        description=(
+            "Log out the current user by deleting their authentication token. Upon success, " "returns no content."
+        ),
     )
     def post(self, request):
         try:
