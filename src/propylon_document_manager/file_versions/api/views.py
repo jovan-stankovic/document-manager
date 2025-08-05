@@ -28,6 +28,7 @@ class FileVersionViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     @extend_schema(
+        summary="Upload a new file version",
         request={
             "multipart/form-data": {
                 "type": "object",
@@ -51,6 +52,7 @@ class FileVersionViewSet(viewsets.ModelViewSet):
             return Response("You have already uploaded this file.", status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
+        summary="List user's file versions",
         responses={200: FileVersionSerializer(many=True)},
         description=(
             "Retrieve a list of all file versions belonging to the authenticated user. "
@@ -61,6 +63,7 @@ class FileVersionViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     @extend_schema(
+        summary="Get a specific file version",
         responses={200: FileVersionSerializer},
         description=(
             "Retrieve details of a specific file version identified by 'id'. This method "
@@ -71,6 +74,7 @@ class FileVersionViewSet(viewsets.ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
 
     @extend_schema(
+        summary="Update a file version",
         request=FileVersionSerializer,
         responses={200: FileVersionSerializer},
         description=(
@@ -82,6 +86,7 @@ class FileVersionViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
 
     @extend_schema(
+        summary="Partially update a file version",
         request=FileVersionSerializer,
         responses={200: FileVersionSerializer},
         description=(
@@ -93,6 +98,7 @@ class FileVersionViewSet(viewsets.ModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
     @extend_schema(
+        summary="Delete a file version",
         responses={204: None},
         description=(
             "Delete a file version identified by 'id'. The authenticated user must own the "
@@ -107,6 +113,7 @@ class GetFileVersionByURL(APIView):
     permission_classes = [IsAuthenticated, IsOwnerOrShared]
 
     @extend_schema(
+        summary="Get file version by URL",
         parameters=[
             OpenApiParameter(
                 name="revision",
@@ -146,6 +153,7 @@ class GetFileVersionByCAS(APIView):
     permission_classes = [IsAuthenticated, IsOwnerOrShared]
 
     @extend_schema(
+        summary="Get file version by CAS URL",
         responses={200: FileResponse},
         description=(
             "Retrieve a file version by its CAS (Content-Addressable Storage) URL. The file "
@@ -171,6 +179,7 @@ class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
+        summary="Register a new user",
         request=UserSerializer,
         responses={201: UserSerializer},
         description=(
@@ -190,6 +199,7 @@ class CustomLoginView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
+        summary="Log in to retrieve auth token",
         request=LoginSerializer,
         responses={200: TokenSerializer},
         description=(
@@ -205,9 +215,10 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
+        summary="Log out user",
         responses={204: None},
         description=(
-            "Log out the current user by deleting their authentication token. Upon success, " "returns no content."
+            "Log out the current user by deleting their authentication token. Upon success, returns no content."
         ),
     )
     def post(self, request):
@@ -217,7 +228,6 @@ class LogoutView(APIView):
         except Token.DoesNotExist:
             pass
 
-        # Return response with no content status
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -227,6 +237,7 @@ class FileShareViewSet(viewsets.ModelViewSet):
     queryset = FileShare.objects.all()
 
     @extend_schema(
+        summary="Create a new file share",
         request=FileShareSerializer,
         responses={201: FileShareSerializer, 400: "Bad Request"},
         description=(
@@ -241,6 +252,7 @@ class FileShareViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
+        summary="List file shares",
         responses={200: FileShareSerializer(many=True), 404: "Not Found"},
         description=(
             "Retrieve a list of all file shares created by the authenticated user. "
@@ -251,6 +263,7 @@ class FileShareViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     @extend_schema(
+        summary="Get specific file share details",
         responses={200: FileShareSerializer, 404: "Not Found"},
         description=(
             "Retrieve details of a specific file share identified by 'id'. This endpoint provides "
@@ -261,6 +274,7 @@ class FileShareViewSet(viewsets.ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
 
     @extend_schema(
+        summary="Update file share details",
         request=FileShareSerializer,
         responses={200: FileShareSerializer, 400: "Bad Request"},
         description=(
@@ -272,6 +286,7 @@ class FileShareViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
 
     @extend_schema(
+        summary="Partially update file share",
         request=FileShareSerializer,
         responses={200: FileShareSerializer, 400: "Bad Request"},
         description=(
@@ -283,6 +298,7 @@ class FileShareViewSet(viewsets.ModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
     @extend_schema(
+        summary="Delete a file share",
         responses={204: None},
         description=(
             "Delete a file share identified by 'id'. This action removes the shared access to the file version "
