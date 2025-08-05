@@ -29,3 +29,9 @@ django-debug-toolbar  # https://github.com/jazzband/django-debug-toolbar
 django-extensions  # https://github.com/django-extensions/django-extensions
 django-coverage-plugin  # https://github.com/nedbat/django_coverage_plugin
 pytest-django  # https://github.com/pytest-dev/pytest-django
+
+# DRF Spectacular and Yasg
+# ------------------------------------------------------------------------------
+drf-yasg>=1.21.7  # https://github.com/axnsan12/drf-yasg
+drf-spectacular==0.28.0  # https://github.com/tfranzel/drf-spectacular
+drf-spectacular-sidecar==2025.8.1  # https://github.com/tfranzel/drf-spectacular-sidecar
