@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..models import FileVersion, User
+from ..models import FileShare, FileVersion, User
 
 
 class FileVersionSerializer(serializers.ModelSerializer):
@@ -47,3 +47,10 @@ class LoginSerializer(serializers.Serializer):
 
 class TokenSerializer(serializers.Serializer):
     token = serializers.CharField()
+
+
+class FileShareSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FileShare
+        fields = ["id", "file_version", "shared_with", "can_edit", "can_delete"]
+        read_only_fields = ["id", "created_at"]

@@ -1,7 +1,7 @@
 import pytest
 
-from propylon_document_manager.file_versions.models import FileVersion, User
-from .factories import FileVersionFactory, UserFactory
+from propylon_document_manager.file_versions.models import FileShare, FileVersion, User
+from .factories import FileShareFactory, FileVersionFactory, UserFactory
 
 
 @pytest.fixture(autouse=True)
@@ -23,3 +23,9 @@ def user(db) -> User:
 def file_version(db) -> FileVersion:
     """Fixture to create a FileVersion instance."""
     return FileVersionFactory()
+
+
+@pytest.fixture
+def file_share(db) -> FileShare:
+    """Fixture to create a FileVersion instance."""
+    return FileShareFactory()

@@ -3,8 +3,7 @@ from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiParameter
-from rest_framework import status
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.permissions import AllowAny
@@ -12,19 +11,18 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .permissions import IsOwner
+from .permissions import IsFileOwner, IsOwnerOrShared
+from .serializers import FileShareSerializer
 from .serializers import FileVersionSerializer, LoginSerializer, TokenSerializer
 from .serializers import UserSerializer
-from ..models import FileVersion
+from ..models import FileShare, FileVersion
 
 
 class FileVersionViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwnerOrShared]
     serializer_class = FileVersionSerializer
+    queryset = FileVersion.objects.all()
     lookup_field = "id"
-
-    def get_queryset(self):
-        return FileVersion.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save()
@@ -106,7 +104,7 @@ class FileVersionViewSet(viewsets.ModelViewSet):
 
 
 class GetFileVersionByURL(APIView):
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwnerOrShared]
 
     @extend_schema(
         parameters=[
@@ -145,7 +143,7 @@ class GetFileVersionByURL(APIView):
 
 
 class GetFileVersionByCAS(APIView):
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwnerOrShared]
 
     @extend_schema(
         responses={200: FileResponse},
@@ -221,3 +219,75 @@ class LogoutView(APIView):
 
         # Return response with no content status
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FileShareViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsFileOwner]
+    serializer_class = FileShareSerializer
+    queryset = FileShare.objects.all()
+
+    @extend_schema(
+        request=FileShareSerializer,
+        responses={201: FileShareSerializer, 400: "Bad Request"},
+        description=(
+            "Create a new file share instance. This endpoint allows a user to share a specific file "
+            "version with another user, optionally specifying if the recipient can edit the shared file."
+        ),
+    )
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        responses={200: FileShareSerializer(many=True), 404: "Not Found"},
+        description=(
+            "Retrieve a list of all file shares created by the authenticated user. "
+            "This will list all users with whom each file version has been shared."
+        ),
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        responses={200: FileShareSerializer, 404: "Not Found"},
+        description=(
+            "Retrieve details of a specific file share identified by 'id'. This endpoint provides "
+            "information about the shared file version and its permissions."
+        ),
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        request=FileShareSerializer,
+        responses={200: FileShareSerializer, 400: "Bad Request"},
+        description=(
+            "Update the details of a specific file share identified by 'id'. This can include changing the "
+            "permissions granted to the shared user."
+        ),
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(
+        request=FileShareSerializer,
+        responses={200: FileShareSerializer, 400: "Bad Request"},
+        description=(
+            "Partially update the details of an existing file share specified by 'id'. This method allows "
+            "modifying certain fields, like edit permissions."
+        ),
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
+        responses={204: None},
+        description=(
+            "Delete a file share identified by 'id'. This action removes the shared access to the file version "
+            "for the specified user."
+        ),
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)

@@ -64,3 +64,14 @@ class FileVersion(models.Model):
             else:
                 self.version_number = 1
         super().save(*args, **kwargs)
+
+
+class FileShare(models.Model):
+    file_version = models.ForeignKey(FileVersion, on_delete=models.CASCADE)
+    shared_with = models.ForeignKey(User, on_delete=models.CASCADE)
+    can_edit = models.BooleanField(default=False)
+    can_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("file_version", "shared_with")

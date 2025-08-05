@@ -7,7 +7,7 @@ from factory import Faker, post_generation, SubFactory
 from factory.django import DjangoModelFactory
 from faker import Faker as FakerLib
 
-from propylon_document_manager.file_versions.models import FileVersion
+from propylon_document_manager.file_versions.models import FileShare, FileVersion
 
 fake = FakerLib()
 
@@ -62,3 +62,13 @@ class FileVersionFactory(DjangoModelFactory):
 
     class Meta:
         model = FileVersion
+
+
+class FileShareFactory(DjangoModelFactory):
+    file_version = SubFactory(FileVersionFactory)
+    shared_with = SubFactory(UserFactory)
+    can_edit = True
+    can_delete = True
+
+    class Meta:
+        model = FileShare
